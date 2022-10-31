@@ -1,0 +1,70 @@
+Bactopia está montado para ser utilitzado en Bioconda, pero también puede trabajar en Docker o Singularity. Así pues, el primer paso es ver donde tenemos instalado Conda en nuestro ordenador. 
+
+```{bash}
+whereis conda
+```
+
+Para poder agregar los canales necesarios para usar Bactopia, tenemos que lanzar los siguientes comandos, que van de  menor a  mayor prioridad. El orden es importante para evitar problemas con la resolución de dependencias. 
+El canal "default" es el que se establece por defecto en una nueva instalación de conda. Debe establecerse en la prioridad más baja. 
+El canal bioconda permite la instalación de paquetes relacionados con la investigación biomédica. 
+El canal conda-forge permite la instalación de paquetes de propósito general. Dado que bioconda depende en gran medida del canal conda-forge, se establece en la prioridad más alta.
+
+```{bash}
+conda config --add channels defaults
+conda config --add channels bioconda
+conda config --add channels conda-forge
+```
+
+El siguiente comando evita errores crípticos al intentar instalar. Garantiza que se respete la prioridad del canal configurada anteriormente al resolver las dependencias. 
+
+
+```{bash}
+conda config --set channel_priority flexible
+```
+
+Ahora para asegurarnos de que tenemos todas las dependencias actualizados lanzamos la siguiente orden: 
+
+```{bash}
+conda update -n base -c conda-forge conda
+```
+
+A continuación, creamos un ambiente ("environment") en bioconda para Bactopia. Esta orden tarda bastante, pero buscando en diferentes fuentes, vemos que es lo normal. 
+
+```{bash}
+conda create -n bactopia -c conda-forge -c bioconda bactopia 
+```
+
+Para activar Bactopia (es decir, cuando queremos usar los programas que tenemos instalados en su ambiente), hemos de lanzar la siguiente línea: 
+
+```{bash}
+conda activate bactopia
+```
+
+En cambio, cuando queremos salir de este ambiente: 
+
+```{bash}
+conda deactivate
+```
+
+Bactopia puede hacer uso de muechos conjuntos de datos públicos existentes, así como conjunto de datos privados. 
+
+Algunos de los conjuntos de datos incluidos son aplicables a todas las especies bacterianas y algunos son específicos de especie. Si se especifica en tiempo de ejecución, Bactopia reconoce los conjuntos de datos y ejecuta el análisis apropiado. 
+
+El primer paso tras crear el entorno para Bactopia es la construcción del conjunto de bases de datos que vamos a utilitzar para nuestro análisis. Con el siguiente comando Bactopia descargará los conjuntos de datos públicos para Pseudomonas aeruginosa y los guardará en el output que le mandamos: 
+
+
+```{bash}
+bactopia datasets --species "Pseudomonas aeruginosa" --include_genus --outdir /home/micro/datasets
+```
+
+Para nuestro análisis, hemos de tener en cuenta que partimos de datos que han sido obtenidos mediante la plataforma Illumina, MiSeq y que el tipo de inputs que tenemos son fastq.gz (archivos de secuencias, normalmente nucleotídicas con una puntuación de calidad asociada, y que además están comprimidos). Además, el tipo de librería que hemos preparado para la secuenciación es de tipo paired-end (extremos emparejados).
+
+La secuenciación tipo paired-end permite secuenciar ambos extremos de un fragmento y generar datos de secuencias alineadas de alta calidad. La secuenciación paired-end facilita la detección de reordenamientos genéticos y elementos de secuencias repetitivas, así como fusiones de genes y transcripciones novedosas (Illumina technology). 
+
+Además de producir el doble de lecturas en el mismo tiempo y esfuerzo durante la preparación de las librerías, la secuenciación paired-end permite un alineamiento de reads (lecturas) más precisa y la capacidad de detectar variantes de inserción-deleción, lo que no es posible con secuenciación tipo single-end (extremos no emparejados).
+
+Así pues, en Bactopia, para secuenciación tipo paired-end usaremos los argumentos --R1, --R2 y --sample si tenemos solo una muestra a analizar. En cambio, si lo que queremos hacer es el análisis completo de un conjunto de muestras, lo que tenemos que preparar es un documento con el listado de las muestras que analizaremos así como la ruta en la que encontramos los archivos forward fastq y reverse fastq, y en la línea de comandos pondremos el argumento --samples. Además vemos otros argumentos, como --datasets en que le indicamos la ruta donde están los datasets que hemos construido --species en que le indicamos el microorganismo del que haremos el análisis (muy importante si tenemos construidas más de una bbdd), --genome_size este caso es importante decirle median, ya que en función del mutante (ST original del que provenga, puede tener una longitud de genoma ligeramente diferente debido a que algunos continen plásmidos, etc) y el argumento --outdir donde le indicamos la carpeta donde queremos que se nor generen todos los resultados. El argumento --max_cpus hace  referencia a el número de procesadores que queremos que se usen en este análisis.
+
+```{bash}
+bactopia --samples /path_to_my_SampleSheet/SampleSheet.txt --datasets /home/micro/datasets/ --species "Pseudomonas aeruginosa" --genome_size median --outdir path_to_generate_output/ --max_cpus 4 
+```
